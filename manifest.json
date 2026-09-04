@@ -1,0 +1,17 @@
+{
+  "name": "보험DB 상담 대시보드",
+  "short_name": "DB상담",
+  "description": "더열심히 영업지원 — DB 상품 원가·판매가 계산 및 상담 포인트 대시보드",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#066129",
+  "theme_color": "#066129",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

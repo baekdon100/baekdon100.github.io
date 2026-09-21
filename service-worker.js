@@ -1,4 +1,4 @@
-const CACHE_NAME = "db-consult-cache-v1";
+const CACHE_NAME = "db-consult-cache-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -21,8 +21,26 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// index.html/앱 페이지는 네트워크 우선(항상 최신 버전 시도) → 실패 시(오프라인) 캐시 사용
+// 아이콘/manifest 등 정적 자원은 캐시 우선(속도)
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const isPage = event.request.mode === "navigate" || event.request.url.endsWith("/index.html") || event.request.url.endsWith("/");
+
+  if (isPage) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

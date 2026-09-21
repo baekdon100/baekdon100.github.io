@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0F5C2E" />
+<title>보험DB 상담 대시보드</title>
+<link rel="manifest" href="./manifest.json" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<style>
+  :root{
+    --green:#0CB14B;
+    --green-dark:#066129;
+    --green-mid:#0C8A3C;
+    --yellow:#FEF200;
+    --yellow-dark:#8A7B00;
+    --yellow-bg:#FFFCE0;
+    --white:#FFFFFF;
+    --offwhite:#F5F8F5;
+    --ink:#231F20;
+    --gray:#5B6B60;
+    --orange:#D9720C;
+    --orange-bg:#FCEEDD;
+    --red:#B3261E;
+    --red-bg:#FBE4E4;
+    --line:#DCE8DE;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,-apple-system,sans-serif;
+    background:var(--offwhite);
+    color:var(--ink);
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
+  #app{
+    display:flex;
+    flex-direction:row;
+    height:100vh;
+    width:100vw;
+    overflow:hidden;
+  }
+  @media (max-width: 860px){
+    #app{ flex-direction:column; overflow:auto; height:auto; min-height:100vh; }
+  }
+
+  /* ---------------- Sidebar ---------------- */
+  #sidebar{
+    background:var(--green-dark);
+    color:var(--white);
+    width:360px;
+    flex:0 0 360px;
+    padding:22px 20px 20px;
+    overflow-y:auto;
+  }
+  @media (max-width: 860px){
+    #sidebar{ width:100%; flex:none; }
+  }
+  #brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  #brand svg{ flex:0 0 auto; }
+  #sidebar h1{
+    font-size:18px;
+    margin:0;
+    font-weight:700;
+    letter-spacing:-0.2px;
+    line-height:1.25;
+  }
+  #sidebar .subtitle{
+    font-size:11.5px;
+    color:var(--yellow);
+    margin:2px 0 20px;
+    padding-left:42px;
+  }
+  .field{ margin-bottom:20px; }
+  .field-label{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--yellow);
+    margin-bottom:8px;
+    display:block;
+  }
+  .pill-row{ display:flex; gap:8px; }
+  .pill-row.stack{ flex-direction:column; }
+  .pill{
+    flex:1;
+    background:var(--green);
+    border:1.5px solid var(--green-mid);
+    color:var(--white);
+    border-radius:10px;
+    padding:12px 10px;
+    font-size:13.5px;
+    font-weight:600;
+    text-align:center;
+    cursor:pointer;
+    transition:background .12s, border-color .12s;
+  }
+  .pill:active{ transform:scale(0.98); }
+  .pill.active{
+    background:var(--yellow);
+    color:var(--green-dark);
+    border-color:var(--yellow);
+  }
+  .pill.stage-btn{ text-align:left; padding:13px 14px; }
+  .pill.stage-btn .stage-sub{
+    display:block;
+    font-size:10.5px;
+    font-weight:400;
+    margin-top:2px;
+    opacity:0.8;
+  }
+  .pill.stage-btn.active .stage-sub{ opacity:0.7; color:var(--green-dark); }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--green);
+    border:1.5px solid var(--green-mid);
+    border-radius:10px;
+    padding:11px 14px;
+    margin-bottom:10px;
+    cursor:pointer;
+  }
+  .toggle-row .toggle-label{ font-size:13px; font-weight:600; }
+  .toggle-row .toggle-desc{ font-size:10.5px; color:var(--yellow-bg); opacity:0.85; margin-top:2px; }
+  .field-hint{ font-size:11px; color:var(--yellow); opacity:0.9; margin-top:6px; font-weight:600; }
+  .switch{
+    width:42px; height:24px; border-radius:12px;
+    background:var(--green-mid);
+    position:relative;
+    flex:0 0 auto;
+    transition:background .15s;
+  }
+  .switch::after{
+    content:"";
+    position:absolute; top:3px; left:3px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--white);
+    transition:left .15s;
+  }
+  .toggle-row.on .switch{ background:var(--yellow); }
+  .toggle-row.on .switch::after{ left:21px; }
+
+  #sidebar .footnote{
+    font-size:10px;
+    color:var(--yellow-bg);
+    opacity:0.7;
+    margin-top:18px;
+    line-height:1.5;
+  }
+
+  /* ---------------- Main panel ---------------- */
+  #main{
+    flex:1;
+    padding:28px 34px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  .combo-tag{
+    font-size:12.5px;
+    color:var(--gray);
+    font-weight:600;
+  }
+  .combo-tag b{ color:var(--green-dark); }
+
+  #hero{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  #hero .hero-label{
+    font-size:13px;
+    color:var(--gray);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  #hero .hero-price{
+    font-family:Georgia,"Times New Roman",serif;
+    font-variant-numeric: tabular-nums;
+    font-size:52px;
+    font-weight:700;
+    color:var(--green-dark);
+    line-height:1;
+  }
+  #hero .hero-price small{ font-size:22px; font-weight:400; color:var(--gray); margin-left:6px; }
+  #hero .hero-region-note{ font-size:12px; color:var(--orange); font-weight:700; margin-top:6px; }
+
+  #feature-card{
+    border-radius:14px;
+    padding:24px 28px;
+    border:1.5px solid var(--line);
+    background:var(--white);
+    display:flex;
+    gap:20px;
+    align-items:center;
+  }
+  #feature-card.flagship{
+    border-color:var(--orange);
+    background:var(--orange-bg);
+  }
+  #illus-wrap{
+    flex:0 0 auto;
+    width:132px;
+    height:132px;
+  }
+  #illus-wrap svg{ width:100%; height:100%; display:block; }
+  .illus-caption{
+    text-align:center;
+    font-size:10px;
+    font-weight:700;
+    color:var(--gray);
+    margin-top:4px;
+  }
+  #feature-card .eyebrow{
+    font-size:11px;
+    font-weight:800;
+    color:var(--green);
+    letter-spacing:0.5px;
+    margin-bottom:4px;
+  }
+  #feature-card.flagship .eyebrow{ color:var(--orange); }
+  #feature-card .feature-title{
+    font-size:21px;
+    font-weight:800;
+    color:var(--green-dark);
+    margin-bottom:8px;
+    letter-spacing:-0.3px;
+    line-height:1.3;
+  }
+  #feature-card.flagship .feature-title{ color:var(--orange); }
+  #feature-card .feature-body{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+  }
+  .catalog-bullet{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.4;
+  }
+  .catalog-bullet .dot{
+    flex:0 0 auto;
+    width:7px; height:7px;
+    border-radius:50%;
+    background:var(--green);
+    margin-top:6px;
+  }
+  #feature-card.flagship .catalog-bullet .dot{ background:var(--orange); }
+  .catalog-bullet.trust{
+    font-weight:500;
+    font-size:12.5px;
+    color:var(--gray);
+    margin-top:4px;
+    padding-top:8px;
+    border-top:1px dashed var(--line);
+  }
+  .catalog-bullet.trust .dot{ background:var(--gray); }
+
+  #detail-toggle{
+    align-self:flex-start;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--green-dark);
+    background:none;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    padding:8px 14px;
+    cursor:pointer;
+  }
+  #detail-toggle:active{ transform:scale(0.98); }
+
+  #breakdown{
+    display:none;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px 24px;
+  }
+  #breakdown.open{ display:block; }
+  #breakdown .bd-title{
+    font-size:12px;
+    font-weight:700;
+    color:var(--gray);
+    margin-bottom:10px;
+  }
+  .bd-row{
+    display:flex;
+    justify-content:space-between;
+    padding:7px 0;
+    border-bottom:1px dashed var(--line);
+    font-size:13.5px;
+  }
+  .bd-row:last-child{ border-bottom:none; }
+  .bd-row .bd-label{ color:var(--gray); }
+  .bd-row .bd-value{ font-weight:700; color:var(--ink); font-variant-numeric: tabular-nums; }
+  .bd-row.total .bd-label, .bd-row.total .bd-value{ color:var(--green-dark); font-weight:800; }
+
+  #spacer{ flex:1; min-height:0; }
+
+  #edu-card{
+    border-radius:14px;
+    padding:18px 24px;
+    border:1px solid var(--line);
+    background:var(--offwhite);
+  }
+  #edu-card .edu-title{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--green-dark);
+    margin-bottom:8px;
+  }
+  #edu-card .edu-body{
+    font-size:12.5px;
+    line-height:1.7;
+    color:var(--gray);
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <aside id="sidebar">
+    <div id="brand">
+      <img src="data:image/png;base64,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" alt="THE열심히 로고" style="height:38px;width:auto;display:block;"/>
+      <h1>보험DB 상담 대시보드</h1>
+    </div>
+
+    <div class="field">
+      <span class="field-label">① 원천 선택</span>
+      <div class="pill-row" id="source-row">
+        <div class="pill" data-value="핀다">핀다</div>
+        <div class="pill" data-value="쇼핑몰">쇼핑몰</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">② 검증단계 선택</span>
+      <div class="pill-row stack" id="stage-row">
+        <div class="pill stage-btn" data-value="콜컨펌">콜컨펌<span class="stage-sub">단순 콜확인 (동의 아님)</span></div>
+        <div class="pill stage-btn" data-value="콜퍼미션 1차완료">콜퍼미션 1차완료<span class="stage-sub">상담의향·지역 확인</span></div>
+        <div class="pill stage-btn" data-value="콜퍼미션 2차완료">콜퍼미션 2차완료<span class="stage-sub">방문일시·정보제공 동의 확인</span></div>
+        <div class="pill stage-btn" data-value="콜퍼미션 3차완료">콜퍼미션 3차완료<span class="stage-sub">1·2차 재확인 완료</span></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">③ 스크립트 선택</span>
+      <div class="pill-row" id="script-row">
+        <div class="pill" data-value="기본형">기본형</div>
+        <div class="pill" data-value="심화형">심화형</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">④ 부가서비스 (중복 선택 가능)</span>
+      <div class="toggle-row" id="toggle-report">
+        <div>
+          <div class="toggle-label">보장분석 레포트</div>
+          <div class="toggle-desc">심평원 데이터 기반 보장분석</div>
+        </div>
+        <div class="switch"></div>
+      </div>
+      <div class="toggle-row" id="toggle-reward">
+        <div>
+          <div class="toggle-label">무료보험 리워드</div>
+          <div class="toggle-desc">고객 상담 참여 유인 제공</div>
+        </div>
+        <div class="switch"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">⑤ 지역 편중 요청</span>
+      <div class="pill-row" id="region-row">
+        <div class="pill" data-value="없음">없음</div>
+        <div class="pill" data-value="1단계">1단계</div>
+        <div class="pill" data-value="2단계">2단계</div>
+        <div class="pill" data-value="3단계">3단계</div>
+      </div>
+      <div class="field-hint">↑ 단계가 높을수록 판매가가 상승합니다</div>
+    </div>
+
+    <p class="footnote">※ 원천DB 단독 상품은 사업제휴 목적 전용으로 이 상담 도구에서는 제공되지 않습니다. 지역 편중은 인구분포(수도권50%·경상25%·전라10%·충청10%·강원5%) 대비 특정지역 집중 요청 시 추가원가입니다. VAT 별도, 판매가는 천원 단위 올림 처리됩니다.</p>
+  </aside>
+
+  <main id="main">
+    <div class="combo-tag" id="combo-tag"></div>
+
+    <div id="hero">
+      <div>
+        <div class="hero-label">상담 제안가 (VAT 별도)</div>
+        <div class="hero-price" id="price-display">0<small>원</small></div>
+        <div class="hero-region-note" id="hero-region-note"></div>
+      </div>
+    </div>
+
+    <div id="feature-card">
+      <div>
+        <div id="illus-wrap"></div>
+        <div class="illus-caption" id="illus-caption"></div>
+      </div>
+      <div>
+        <div class="eyebrow" id="feature-eyebrow">DB 활용 가이드</div>
+        <div class="feature-title" id="feature-title"></div>
+        <div class="feature-body" id="feature-body"></div>
+      </div>
+    </div>
+
+    <div id="edu-card">
+      <div class="edu-title">📘 교육용 설명자료</div>
+      <div class="edu-body" id="edu-body"></div>
+    </div>
+
+    <div id="spacer"></div>
+
+    <button id="detail-toggle" type="button">▸ 내부용 원가 상세 보기</button>
+    <div id="breakdown">
+      <div class="bd-title">원가 분해 (내부 참고용 — 고객 상담 중 노출 금지)</div>
+      <div class="bd-row"><span class="bd-label">원천DB 원가</span><span class="bd-value" id="bd-src"></span></div>
+      <div class="bd-row"><span class="bd-label">검증단계 기본원가 (기본형 기준)</span><span class="bd-value" id="bd-stagebase"></span></div>
+      <div class="bd-row"><span class="bd-label">→ 스크립트 반영 검증원가</span><span class="bd-value" id="bd-stagecost"></span></div>
+      <div class="bd-row"><span class="bd-label">보장분석 레포트 원가</span><span class="bd-value" id="bd-report"></span></div>
+      <div class="bd-row"><span class="bd-label">무료보험 리워드 원가</span><span class="bd-value" id="bd-reward"></span></div>
+      <div class="bd-row"><span class="bd-label">지역 편중 추가원가</span><span class="bd-value" id="bd-region"></span></div>
+      <div class="bd-row"><span class="bd-label">직접원가 합계</span><span class="bd-value" id="bd-direct"></span></div>
+      <div class="bd-row"><span class="bd-label">판매관리비 (직접원가×70%)</span><span class="bd-value" id="bd-overhead"></span></div>
+      <div class="bd-row total"><span class="bd-label">총원가</span><span class="bd-value" id="bd-fullcost"></span></div>
+      <div class="bd-row total"><span class="bd-label">판매가 (목표마진율 30%, 천원 올림)</span><span class="bd-value" id="bd-price"></span></div>
+      <div class="bd-row"><span class="bd-label">마진액</span><span class="bd-value" id="bd-margin"></span></div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ===================== 원가기준 (원가기준표와 동일 값) =====================
+const COST = {
+  source: { "핀다": 15000, "쇼핑몰": 10000 },
+  stageBase: {
+    "콜컨펌": 10000,
+    "콜퍼미션 1차완료": 20000,
+    "콜퍼미션 2차완료": 35000,
+    "콜퍼미션 3차완료": 67000,
+  },
+  scriptPremium: 0.20,
+  addonReport: 5000,
+  addonReward: 5000,
+  region: { "없음": 0, "1단계": 5000, "2단계": 10000, "3단계": 20000 },
+  overheadRate: 0.70,
+  marginRate: 0.30,
+};
+
+// ===================== 상담 포인트 문구 (카탈로그형 짧은 불릿) =====================
+const STAGE_BULLETS = {
+  "콜컨펌": ["초경량 접근, 대량 물량에 최적화", "비대면 상담 전용, 가성비 갑", "짧은 통화로 빠른 리드 확보"],
+  "콜퍼미션 1차완료": ["상담 의향 O · 거주지역 O", "어색한 인사 없이 바로 본론", "초기 필터링 완료 리드"],
+  "콜퍼미션 2차완료": ["보험료 지출 규모까지 파악 완료", "방문 가능 일정, 이미 확보", "설명 없이 바로 계약 이야기"],
+  "콜퍼미션 3차완료": ["3차례 통화로 재확인된 확실한 방문상담 니즈", "방문성공율 50% 수준 — 20만원 가치, 시장에서 검증", "실시간 전송으로 기억 생생할 때 바로 접촉"],
+};
+const FLAGSHIP_BULLETS = ["보험료 지출·방문일정 확보 완료", "숫자로 보여주는 보장 공백 분석", "설명 없이 바로 계약 이야기, 성사율 최상위"];
+const SCRIPT_BULLET = "관심상품·직업까지 사전 파악 완료";
+const REPORT_BULLET = "숫자로 보여주는 보장 공백 (심평원 데이터)";
+const REWARD_BULLET = "첫 통화부터 거부감 ZERO (무료보험 제공)";
+const REGION_BULLET = {
+  "1단계": "특정 지역 집중 공급 (타사 중복 공급 최소화)",
+  "2단계": "지역 집중도 강화 — 사실상 준독점적 지역 공급",
+  "3단계": "최고 수준 지역 집중 — 사실상 독점적 지역 공급",
+};
+const TRUST_BULLET = "AI QA · 금감원 스크립트 가이드 준수 · 100% 직영콜센터(서울가산·대전·수원) · ISMS 인증";
+
+// ===================== 교육용 설명자료 (상세 문단) =====================
+const STAGE_EDU = {
+  "콜컨펌": "짧은 통화로 생존여부와 기초 관심도만 확인한 리드입니다. 동의(퍼미션) 단계 이전이라 단가는 낮지만, 그만큼 대량으로 물량을 확보할 수 있어 비대면 상담 조직이 초기 접촉량을 늘리고 싶을 때 유리합니다. 신입 설계사가 콜 감각을 익히는 연습용으로도 적합합니다.",
+  "콜퍼미션 1차완료": "고객이 1차 콜에서 상담 의향과 거주지역을 이미 밝힌 상태입니다. 아직 방문일정이나 지출규모까지는 확인되지 않았지만, 완전히 낯선 고객보다 훨씬 수월하게 대화를 시작할 수 있어 콜 초반 어색함을 줄이는 데 효과적입니다.",
+  "콜퍼미션 2차완료": "2차 콜까지 완료되어 보험료 지출 규모와 방문 가능 일정까지 고객이 직접 밝힌 상태입니다. 더열심히 상품 중 가장 검증 단계가 깊은 핵심 주력 상품으로, 접촉 대비 계약 성사율이 가장 높게 나타나는 구간입니다. 왜 전화했는지 설명하는 시간을 아낄 수 있어 상담 효율이 좋습니다.",
+  "콜퍼미션 3차완료": "보험사가 DB 품질을 판단할 때 가장 중요하게 보는 지표는 방문성공율입니다. 방문성공율이 50% 수준이면 건당 20만원의 가치는 시장에서 충분하다고 평가받고 있습니다. 3차완료 DB는 1·2차 콜에서 확인된 상담의향과 지출규모·방문일정을 영업 직전 단계에서 한 번 더 재확인한 리드로, 세 차례의 통화를 거치며 '방문 보험상담을 받겠다'는 고객의 니즈가 확실하게 검증된 상태입니다. 그만큼 방문성공율이 높게 나타나 시장 기준(방문성공율 50%=20만원)에 부합하는 프리미엄 리드입니다. 실시간 전송 시스템을 통해 통화 종료 직후 곧바로 설계사에게 전달되므로, 고객의 기억이 흐려지기 전에 접촉할 수 있다는 점도 강점입니다. 방문 성사율을 최우선으로 하는 조직에 적합합니다.",
+};
+const SCRIPT_EDU = "심화형 스크립트는 기본형 대비 관심 있는 보험상품과 직업 정보까지 추가로 확인합니다. 이 정보를 활용하면 상담 시작부터 고객 상황에 맞는 멘트로 들어갈 수 있어, 첫 마디의 어색함을 줄이고 상담 몰입도를 높이는 데 도움이 됩니다.";
+const REPORT_EDU = "보장분석 레포트는 심평원(건강보험심사평가원)의 개인보험 가입현황 정보 이용동의를 기반으로 생성되며, 고객이 현재 보유한 보장 내역과 비어있는 보장 항목을 데이터로 보여줍니다. 감에 의존한 설명이 아니라 숫자와 자료로 보장 공백을 짚어줄 수 있어 상담 설득력이 높아집니다.";
+const REWARD_EDU = "무료보험 리워드는 고객에게 사전 제공되는 소액 보장성 혜택으로, 첫 통화 시점에 이미 더열심히·제휴사에 대한 긍정적 경험을 가진 상태라는 뜻입니다. 이 덕분에 초반 거부감이 낮아지고 상담 분위기가 우호적으로 시작되는 경우가 많습니다.";
+const REGION_EDU = {
+  "1단계": "인구분포 비례(수도권50%·경상25%·전라10%·충청10%·강원5%)에서 경미하게 벗어나 특정 지역에 집중 공급되는 DB입니다. 해당 지역은 다른 보험사에 중복 공급하기 어려워지는 만큼 추가원가가 반영됩니다.",
+  "2단계": "인구분포 대비 중간 수준으로 특정 지역에 편중된 DB입니다. 타사 공급 제약이 1단계보다 커서 추가원가가 더 반영됩니다.",
+  "3단계": "인구분포 대비 편중이 가장 심한 수준으로, 사실상 특정 지역을 독점적으로 공급받는 형태입니다. 타사 공급 제약이 가장 크므로 추가원가도 최고 수준입니다.",
+};
+const TRUST_EDU = "이 모든 리드는 AI QA를 통해 스크립트 준수 여부를 표준화하고, 금감원·방송통신위원회의 스크립트 가이드 권고사항을 반영해 제작됩니다. 상담속도(분당 500음절 이내) 관리와 전 통화 실시간 녹취가 적용되는 100% 직영콜센터(서울가산·대전·수원)에서 생산되며, ISMS 정보보호관리체계 인증(2014년~)과 K-ICT 정보보호대상 수상 이력으로 품질과 보안을 함께 인정받았습니다.";
+
+function buildEduText(stage, script, hasReport, hasReward, region) {
+  const segs = [STAGE_EDU[stage]];
+  if (script === "심화형") segs.push(SCRIPT_EDU);
+  if (hasReport) segs.push(REPORT_EDU);
+  if (hasReward) segs.push(REWARD_EDU);
+  if (region !== "없음") segs.push(REGION_EDU[region]);
+  segs.push(TRUST_EDU);
+  return segs.join(" ");
+}
+
+function buildFeatureText(stage, script, hasReport, hasReward, region) {
+  if (stage === "콜퍼미션 2차완료" && hasReport) {
+    const bullets = [...FLAGSHIP_BULLETS];
+    if (script === "심화형") bullets.push(SCRIPT_BULLET);
+    if (hasReward) bullets.push(REWARD_BULLET);
+    if (region !== "없음") bullets.push(REGION_BULLET[region]);
+    return { flagship: true, bullets, trust: TRUST_BULLET };
+  }
+  const bullets = [...STAGE_BULLETS[stage]];
+  if (script === "심화형") bullets.push(SCRIPT_BULLET);
+  if (hasReport) bullets.push(REPORT_BULLET);
+  if (hasReward) bullets.push(REWARD_BULLET);
+  if (region !== "없음") bullets.push(REGION_BULLET[region]);
+  return { flagship: false, bullets, trust: TRUST_BULLET };
+}
+
+// ===================== 헤드라인 (DB 활용 가이드 — 광고 카피) =====================
+const STAGE_HEADLINE = {
+  "콜컨펌": "일단 걸어보자, 가성비 갑 리드!",
+  "콜퍼미션 1차완료": "이미 마음 연 고객, 바로 본론으로!",
+  "콜퍼미션 2차완료": "계약서만 내밀면 되는 고객!",
+  "콜퍼미션 3차완료": "방문성공율 50%, 시장이 인정한 리드!",
+};
+const FLAGSHIP_HEADLINE = "이 고객, 계약서만 내밀면 끝!";
+
+// ===================== 단계별 카툰 일러스트 (설계사를 기다리는 고객, 브랜드 마스코트 스타일) =====================
+const ILLUS = {
+  "콜컨펌": {
+    bg: "#EAF6EE", ring: "#CFE9D6", badge: "❓",
+    caption: "가볍게 인사할 준비 완료",
+    headRotate: -6,
+    arms: '<path d="M85 148 L62 172" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M135 148 L158 168" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/>',
+    legs: '<path d="M100 196 L82 226" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M120 196 L138 226" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round"/>',
+  },
+  "콜퍼미션 1차완료": {
+    bg: "#FFF6DF", ring: "#FCE6A8", badge: "📍",
+    caption: "이미 마음을 열었어요",
+    headRotate: 4,
+    arms: '<path d="M85 145 Q65 120 55 95" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M135 148 L160 170" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/>',
+    legs: '<path d="M100 196 L84 228" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M120 196 L136 228" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round"/>',
+  },
+  "콜퍼미션 2차완료": {
+    bg: "#FFE9C2", ring: "#FBD37E", badge: "📅",
+    caption: "일정까지 비워뒀어요",
+    headRotate: 0,
+    arms: '<path d="M85 145 Q62 130 48 108" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M135 145 Q158 130 172 108" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/>',
+    legs: '<path d="M100 196 L88 230 L70 230" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M120 196 L132 230 L150 230" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  },
+  "콜퍼미션 3차완료": {
+    bg: "#FCEEDD", ring: "#F5B060", badge: "🔔",
+    caption: "지금 이 순간, 전화를 기다리는 중",
+    headRotate: -4,
+    arms: '<path d="M85 148 Q70 118 78 90" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M135 145 Q168 138 182 118" stroke="#231F20" stroke-width="8" fill="none" stroke-linecap="round"/>',
+    legs: '<path d="M100 196 L78 224" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M120 196 L148 232" stroke="#231F20" stroke-width="9" fill="none" stroke-linecap="round"/>',
+  },
+};
+
+function personSVG(cfg, ringing, satellites) {
+  const ringLines = ringing ? `
+    <path d="M150 55 Q160 65 150 78" stroke="#D9720C" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M160 48 Q176 65 160 85" stroke="#D9720C" stroke-width="3" fill="none" stroke-linecap="round"/>
+  ` : "";
+  const satPositions = [
+    { cx: 34, cy: 60 },   // top-left
+    { cx: 34, cy: 190 },  // bottom-left
+    { cx: 186, cy: 192 }, // bottom-right
+  ];
+  const satSVG = satellites.map((emoji, i) => {
+    const p = satPositions[i];
+    if (!p) return "";
+    return `
+      <circle cx="${p.cx}" cy="${p.cy}" r="17" fill="#FFFFFF" stroke="${cfg.ring}" stroke-width="2"/>
+      <text x="${p.cx}" y="${p.cy + 6}" font-size="16" text-anchor="middle" font-family="Arial">${emoji}</text>`;
+  }).join("");
+  return `
+  <svg viewBox="0 0 220 240" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="110" cy="118" r="106" fill="${cfg.bg}"/>
+    <circle cx="110" cy="118" r="106" fill="none" stroke="${cfg.ring}" stroke-width="4"/>
+    ${cfg.legs}
+    <path d="M110 108 L83 197 L137 197 Z" fill="#FEF200"/>
+    ${cfg.arms}
+    <g transform="rotate(${cfg.headRotate} 110 82)">
+      <path d="M110 52 C128 52 140 66 140 84 C140 104 122 118 110 128 C98 118 80 104 80 84 C80 66 92 52 110 52 Z" fill="#0CB14B"/>
+      <path d="M100 78 Q110 90 118 76" stroke="#066129" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+    ${ringLines}
+    <circle cx="160" cy="60" r="22" fill="#FFFFFF" stroke="${cfg.ring}" stroke-width="2"/>
+    <text x="160" y="68" font-size="22" text-anchor="middle" font-family="Arial">${cfg.badge}</text>
+    ${satSVG}
+  </svg>`;
+}
+
+function renderIllustration(stage, script, hasReport, hasReward, flagship) {
+  const cfg = ILLUS[stage];
+  const satellites = [];
+  if (hasReward) satellites.push("💵");
+  if (hasReport) satellites.push("💰");
+  if (script === "심화형") satellites.push("📈");
+  document.getElementById('illus-wrap').innerHTML = personSVG(cfg, flagship || stage === "콜퍼미션 3차완료", satellites);
+  const capParts = [cfg.caption];
+  if (script === "심화형") capParts.push("맞춤 상담 준비");
+  if (hasReport) capParts.push("보장분석 동봉");
+  if (hasReward) capParts.push("리워드 지급");
+  document.getElementById('illus-caption').textContent = capParts.join(" · ");
+}
+
+// ===================== 상태 =====================
+let state = {
+  source: "핀다",
+  stage: "콜퍼미션 2차완료",
+  script: "기본형",
+  report: false,
+  reward: false,
+  region: "없음",
+};
+
+const fmt = (n) => n === null || n === undefined ? "-" : Math.round(n).toLocaleString("ko-KR") + " 원";
+
+function calc() {
+  const src = COST.source[state.source];
+  const stageBase = COST.stageBase[state.stage];
+  const stageCost = stageBase * (state.script === "심화형" ? (1 + COST.scriptPremium) : 1);
+  const reportCost = state.report ? COST.addonReport : 0;
+  const rewardCost = state.reward ? COST.addonReward : 0;
+  const regionCost = COST.region[state.region] || 0;
+  const direct = src + stageCost + reportCost + rewardCost + regionCost;
+  const overhead = direct * COST.overheadRate;
+  const fullCost = direct + overhead;
+  const rawPrice = fullCost / (1 - COST.marginRate);
+  const price = Math.ceil(rawPrice / 1000) * 1000;
+  const margin = price - fullCost;
+  return { src, stageBase, stageCost, reportCost, rewardCost, regionCost, direct, overhead, fullCost, price, margin };
+}
+
+function render() {
+  document.querySelectorAll('#source-row .pill').forEach(el => el.classList.toggle('active', el.dataset.value === state.source));
+  document.querySelectorAll('#stage-row .pill').forEach(el => el.classList.toggle('active', el.dataset.value === state.stage));
+  document.querySelectorAll('#script-row .pill').forEach(el => el.classList.toggle('active', el.dataset.value === state.script));
+  document.querySelectorAll('#region-row .pill').forEach(el => el.classList.toggle('active', el.dataset.value === state.region));
+  document.getElementById('toggle-report').classList.toggle('on', state.report);
+  document.getElementById('toggle-reward').classList.toggle('on', state.reward);
+
+  const r = calc();
+
+  document.getElementById('combo-tag').innerHTML =
+    `<b>${state.source}</b> · <b>${state.stage}</b> · <b>${state.script}</b>` +
+    (state.report ? ' · 보장분석' : '') + (state.reward ? ' · 무료보험리워드' : '') +
+    (state.region !== '없음' ? ` · 지역편중 ${state.region}` : '');
+
+  document.getElementById('price-display').innerHTML = `${Math.round(r.price).toLocaleString('ko-KR')}<small>원</small>`;
+  document.getElementById('hero-region-note').textContent =
+    state.region !== '없음' ? `↑ 지역 편중(${state.region}) 반영으로 +${fmt(r.regionCost)} 상승` : '';
+
+  const feat = buildFeatureText(state.stage, state.script, state.report, state.reward, state.region);
+  const card = document.getElementById('feature-card');
+  card.classList.toggle('flagship', feat.flagship);
+  document.getElementById('feature-title').textContent = feat.flagship ? FLAGSHIP_HEADLINE : STAGE_HEADLINE[state.stage];
+  const bodyEl = document.getElementById('feature-body');
+  bodyEl.innerHTML =
+    feat.bullets.map(b => `<div class="catalog-bullet"><span class="dot"></span><span>${b}</span></div>`).join('') +
+    `<div class="catalog-bullet trust"><span class="dot"></span><span>${feat.trust}</span></div>`;
+  document.getElementById('edu-body').textContent = buildEduText(state.stage, state.script, state.report, state.reward, state.region);
+  renderIllustration(state.stage, state.script, state.report, state.reward, feat.flagship);
+
+  document.getElementById('bd-src').textContent = fmt(r.src);
+  document.getElementById('bd-stagebase').textContent = fmt(r.stageBase);
+  document.getElementById('bd-stagecost').textContent = fmt(r.stageCost);
+  document.getElementById('bd-report').textContent = fmt(r.reportCost);
+  document.getElementById('bd-reward').textContent = fmt(r.rewardCost);
+  document.getElementById('bd-region').textContent = fmt(r.regionCost);
+  document.getElementById('bd-direct').textContent = fmt(r.direct);
+  document.getElementById('bd-overhead').textContent = fmt(r.overhead);
+  document.getElementById('bd-fullcost').textContent = fmt(r.fullCost);
+  document.getElementById('bd-price').textContent = fmt(r.price);
+  document.getElementById('bd-margin').textContent = fmt(r.margin);
+}
+
+document.getElementById('source-row').addEventListener('click', (e) => {
+  const t = e.target.closest('.pill'); if (!t) return;
+  state.source = t.dataset.value; render();
+});
+document.getElementById('stage-row').addEventListener('click', (e) => {
+  const t = e.target.closest('.pill'); if (!t) return;
+  state.stage = t.dataset.value; render();
+});
+document.getElementById('script-row').addEventListener('click', (e) => {
+  const t = e.target.closest('.pill'); if (!t) return;
+  state.script = t.dataset.value; render();
+});
+document.getElementById('region-row').addEventListener('click', (e) => {
+  const t = e.target.closest('.pill'); if (!t) return;
+  state.region = t.dataset.value; render();
+});
+document.getElementById('toggle-report').addEventListener('click', () => { state.report = !state.report; render(); });
+document.getElementById('toggle-reward').addEventListener('click', () => { state.reward = !state.reward; render(); });
+
+document.getElementById('detail-toggle').addEventListener('click', (e) => {
+  const el = document.getElementById('breakdown');
+  el.classList.toggle('open');
+  e.target.textContent = el.classList.contains('open') ? '▾ 내부용 원가 상세 닫기' : '▸ 내부용 원가 상세 보기';
+});
+
+render();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
